@@ -6,34 +6,34 @@ const MultiStream = require('multistream');
 const path = './csvs/';
 const lineEnd = '\r\n';
 
-const startDayOfThisTerm = "09/27/2020";
+const startDayOfThisTerm = "08/31/2020";
 
 // "Sun Sep 27 2020 GMT+0800 (China Standard Time)"
 // "09/27/2020"
 // the first day of first week in this semester
 
 const timeTable_morning = [
-  "08:30 AM,10:15 AM",
-  "10:30 AM,12:15 PM"
+  "08:30,10:15",
+  "10:30,12:15"
 ]
 
 const timeTable_afternoon = [
-  "01:45 PM,03:30 PM",
-  "03:45 PM,05:30 PM"
+  "13:45,15:30",
+  "15:45,17:30"
 ]
 const timeTable_evening = [
-  "06:30 PM,08:15 PM",
-  "08:30 PM,10:15 PM"
+  "18:30,20:15",
+  "20:30,10:15"
 ]
 
 const timeTable_afternoon_delayed = [
-  "02:00 PM,03:45 PM",
-  "04:00 PM,05:45 PM"
+  "14:00,15:45",
+  "16:00,17:45"
 ]
 
 const timeTable_evening_delayed = [
-  "06:45 PM,08:30 PM",
-  "08:45 PM,10:30 PM"
+  "18:45,20:30",
+  "20:45,22:30"
 ]
 
 const timeTable = [
@@ -71,7 +71,7 @@ const convert2googleCsvTransform = fileName => new Stream.Transform({
                       .map((e_ofDay, i_whichDay) => {
                           try {
                             return `${e_ofDay.split("\"")[1].split(`\n[`)[0]},${temp = getDate(weekNum, i_whichDay + 1)},${temp},${timeTable[i_whichPeriod]},${e_ofDay},${e_ofDay.slice(e_ofDay.lastIndexOf('[')  + 1, e_ofDay.lastIndexOf(']'))}`
-                            // Example: 精通口嗨,09/28/2020,09/28/2020,10:21 AM,10:30 AM,精通口嗨[1-4节][-1-15周][Z5608],Z5608
+                            // Example: 精通口嗨,09/28/2020,09/28/2020,10:21,10:30,精通口嗨[1-4节][-1-15周][Z5608],Z5608
                             //NOTE: \n[ not the same as lineEnd. 😶
                           } catch (err) {
                             return '';
