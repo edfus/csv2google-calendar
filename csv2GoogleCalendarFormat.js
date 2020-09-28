@@ -35,7 +35,31 @@ const timeTable_evening_delayed = [
   "18:45,20:30",
   "20:45,22:30"
 ]
+/*
+const timeTable_morning = [
+  "08:30 AM,10:15 AM",
+  "10:30 AM,12:15 PM"
+]
 
+const timeTable_afternoon = [
+  "01:45 PM,03:30 PM",
+  "03:45 PM,05:30 PM"
+]
+const timeTable_evening = [
+  "06:30 PM,08:15 PM",
+  "08:30 PM,10:15 PM"
+]
+
+const timeTable_afternoon_delayed = [
+  "02:00 PM,03:45 PM",
+  "04:00 PM,05:45 PM"
+]
+
+const timeTable_evening_delayed = [
+  "06:45 PM,08:30 PM",
+  "08:45 PM,10:30 PM"
+]
+*/
 const timeTable = [
   ...timeTable_morning,
   ...timeTable_afternoon_delayed,
@@ -58,15 +82,18 @@ const getDate = (theWeek, dayOftheWeek) => {
 
 const convert2googleCsvTransform = fileName => new Stream.Transform({
   transform: (chunk, encoding, done) => {
-      const result = chunk.toString();
+      let result = chunk.toString();
       const weekNum = fileName.match(/\d+/)[0];
       let temp = ''
-      done(null, 
-        result.split(`,,,,,,,${lineEnd},,,,,,,`)[1] // 获取中间部分。
-            .split(`,星期一,星期二,星期三,星期四,星期五,星期六,星期日${lineEnd}`)[1] // 去除头
+
+      result = result.split(`,,,,,,,${lineEnd},,,,,,,`)[1] // 获取中间部分。
+            // .split(`,星期一,星期二,星期三,星期四,星期五,星期六,星期日${lineEnd}`)[1] // 去除头
             .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
-            .split(/第\d{1,2}-\d{1,2}节,/) // 分
-            .map((e_ofWeek, i_whichPeriod) => 
+            .split(/第\d{1,2}-\d{1,2}节,/); // 分时间段
+      result.shift();
+
+      done(null, 
+          result.map((e_ofWeek, i_whichPeriod) => 
               e_ofWeek.split(',')
                       .map((e_ofDay, i_whichDay) => {
                           try {
