@@ -70,7 +70,7 @@ const getDate = (theWeek, dayOftheWeek) => {
   const millisecondsOfADay = 86400000;
   const startDate = new Date(startDayOfThisTerm);
   const date = new Date(startDate.getTime() + ( (Number(theWeek) - 1) * 7 + Number(dayOftheWeek) - 1 ) * millisecondsOfADay);
-  return date.toLocaleTimeString(
+  return date.toLocaleDateString(
               Intl.DateTimeFormat().resolvedOptions().locale, 
               {
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, 
