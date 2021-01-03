@@ -73,7 +73,7 @@ const destination = fs.createWriteStream('result.csv');
       ...(await fs.promises.readdir(path))
         .filter(e => /(\.csv)$/.test(e))
         .map(file => {
-          const buffer = '';
+          let buffer = '';
           return (
             pipeline(
               fs.createReadStream(path + file),
@@ -89,7 +89,8 @@ const destination = fs.createWriteStream('result.csv');
                   );
                 }
               }),
-              convert2googleCsvTransform(file)
+              convert2googleCsvTransform(file),
+              err => {if(err) throw err}
             )
           )
         })
@@ -98,20 +99,19 @@ const destination = fs.createWriteStream('result.csv');
 
   try {
     for (const stream of sources) {
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => 
         stream
           .once("close", reject)
           .once("error", reject)
           .once("end", resolve)
           .pipe(destination, { end: false })
-            .once("close", reject)
-            .once("error", reject)
-      })
+      )
     }
   } catch (err) {
     sources.forEach(stream => stream.destroy(err));
-    throw err;
+    console.error(err);
   } finally {
     destination.end();
+    console.info("done.");
   }
 })();

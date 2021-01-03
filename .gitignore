@@ -3,3 +3,4 @@
 /csvs
 package-lock.json
 result.csv
+*config.js
