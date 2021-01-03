@@ -1,15 +1,10 @@
 {
   "name": "calendar",
-  "version": "1.0.0",
-  "description": "convert original excel to csv",
-  "main": "csv2GoogleCalendarFormat.js",
+  "version": "2.0.0",
+  "main": "csv2google-calendar-format.js",
   "scripts": {
-    "convert": "node csv2GoogleCalendarFormat.js"
+    "convert": "node csv2google-calendar-format.js"
   },
   "author": "e",
-  "license": "ISC",
-  "dependencies": {
-    "iconv-lite": "^0.6.2",
-    "multistream": "^4.0.0"
-  }
+  "license": "ISC"
 }
