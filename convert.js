@@ -28,7 +28,6 @@ const convert2googleCsvTransform = fileName => new Stream.Transform({
   transform: (chunk, encoding, done) => {
       let result = chunk.toString();
       const weekNum = fileName.match(/\d+/)[0];
-      let temp = ''
 
       result = result.split(`,,,,,,,${lineEnd},,,,,,,`)[1]
             .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
@@ -39,10 +38,17 @@ const convert2googleCsvTransform = fileName => new Stream.Transform({
           result.map((e_ofWeek, i_whichPeriod) => 
               e_ofWeek.split(',')
                       .map((e_ofDay, i_whichDay) => {
+                          let date = ''
                           try {
-                            return `${e_ofDay.split("\"")[1].split(`\n[`)[0]},${temp = getDate(weekNum, i_whichDay + 1)},${temp},${timeTable[i_whichPeriod]},${e_ofDay},${e_ofDay.slice(e_ofDay.lastIndexOf('[')  + 1, e_ofDay.lastIndexOf(']'))}`
-                            // Example: course name,09/28/2020,09/28/2020,10:21,10:30,course name[1-4节][-1-15周][Z5608],Z5608
-                            // \n[ not the same as lineEnd.
+                            return (
+                              `${e_ofDay.split("\"")[1].split(`\n[`)[0]},` // \n[ instead of \r\n[
+                              + `${date = getDate(weekNum, i_whichDay + 1)},`
+                              + `${date},`
+                              + `${timeTable[i_whichPeriod]},`
+                              + `${e_ofDay},`
+                              + `${e_ofDay.slice(e_ofDay.lastIndexOf('[')  + 1, e_ofDay.lastIndexOf(']'))}`
+                            );
+                            // Example: course name,09/28/2020,09/28/2020,10:21,10:30,course name[period: 1-4 H][session: 1-15 W][Z5608],Z5608
                           } catch (err) {
                             return '';
                           }

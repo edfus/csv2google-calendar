@@ -6,15 +6,15 @@ import { pipeline } from "stream";
 import {
   host,
   path,
-  report_path,
+  api_path,
   student_id
 } from "./scrape.config.js";
 
-const [semester_year, which_semester]
+const [academic_year, which_semester]
       = ["2020-2021", "2"];
-// which_semester: 1 - autumn, 2 -spring, 3 - summer
+// which_semester: 1 - autumn semester, 2 -spring semester, 3 - summer session
 
-const num2zc = index => 
+const week = index => 
   "0".repeat(index)
     .concat("1")
     .concat(
@@ -24,11 +24,11 @@ const num2zc = index =>
 
 const query = [
   {
-    reportlet: report_path,
-    xn: semester_year,  // 学年
-    xq: which_semester, // 学期
-    dm: student_id,     // 代码
-    zc: num2zc(1)       // 周次
+    reportlet: api_path,
+    xn: academic_year, 
+    xq: which_semester,
+    dm: student_id,    
+    zc: week(1)        
   }
 ];
 
@@ -46,12 +46,12 @@ const startFrom = 1;
     await fsp.mkdir(dest);
 
   Promise.allSettled (
-    new Array(16) // 15 weeks
+    new Array(16) // startFrom ~ startFrom + 15 weeks
       .fill(void 0)
       .map(
         (und, i) => {
           i = i + startFrom;
-          query[0].zc = num2zc(i);
+          query[0].zc = week(i);
           params.reportlets = encodeURIComponent(JSON.stringify(query));
 
           return new Promise((resolve, reject) => 

@@ -1,9 +1,10 @@
 {
-  "name": "calendar",
+  "name": "csv-to-google-calendar",
   "version": "2.0.0",
-  "main": "csv2google-calendar-format.js",
+  "main": "convert.js",
   "scripts": {
-    "convert": "node csv2google-calendar-format.js"
+    "convert": "node convert.js",
+    "c": "node convert.js"
   },
   "author": "e",
   "license": "ISC"
