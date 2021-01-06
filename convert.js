@@ -85,7 +85,7 @@ const destination = fs.createWriteStream('result.csv');
               fs.createReadStream(path + file),
               new Transform({
                 transform (chunk, buffer_enc, cb) {
-                  buffer = buffer.concat(decoder.decode(chunk));
+                  buffer = buffer.concat(decoder.decode(chunk, { stream: true }));
                   return cb();
                 },
                 flush (cb) {
