@@ -25,17 +25,17 @@ const getDate = (theWeek, dayOftheWeek) => {
 }
 
 const convert2googleCsvTransform = fileName => new Stream.Transform({
-  transform: (chunk, encoding, done) => {
-      let result = chunk.toString();
+  decodeStrings: false,
+  transform: (csvText, meaningless, write) => {
       const weekNum = fileName.match(/\d+/)[0];
 
-      result = result.split(`,,,,,,,${lineEnd},,,,,,,`)[1]
-            .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
-            .split(/第\d{1,2}-\d{1,2}节,/);
-      result.shift();
+      const csvArray = csvText.split(`,,,,,,,${lineEnd},,,,,,,`)[1]
+                            .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
+                            .split(/第\d{1,2}-\d{1,2}节,/);
+      csvArray.shift();
 
-      done(null, 
-          result.map((e_ofWeek, i_whichPeriod) => 
+      write(null,
+          csvArray.map((e_ofWeek, i_whichPeriod) => 
               e_ofWeek.split(',')
                       .map((e_ofDay, i_whichDay) => {
                           let date = ''
@@ -59,6 +59,7 @@ const convert2googleCsvTransform = fileName => new Stream.Transform({
             .filter(e => e)
             .join(lineEnd)
         )
+      console.info(`  ${fileName} done`)
   }
 });
 
@@ -69,21 +70,30 @@ const beginningLine = new Stream.Readable({
   }
 });
 
-const decoder = new TextDecoder("gb2312");
-const destination = fs.createWriteStream('result.csv');
+const fileEncoding = "utf8";
+const destinationFilename = "./result.csv";
+const decoder = new TextDecoder(fileEncoding);
+const destination = fs.createWriteStream(destinationFilename);
+
+console.info(
+  [
+    `From: ${/\/|\\$/.test(path) ? path : path.concat("/")}*.csv (file encoding: ${fileEncoding})`,
+    `To:   ${destinationFilename} (file encoding: utf8)`
+  ].join("\n"));
 
 (async () => {
   const sources = (
     [
       beginningLine,
       ...(await fs.promises.readdir(path))
-        .filter(e => /(\.csv)$/.test(e))
+        .filter(e => /\.csv$/.test(e))
         .map(file => {
           let buffer = '';
           return (
             pipeline(
               fs.createReadStream(path + file),
               new Transform({
+                objectMode: true,
                 transform (chunk, buffer_enc, cb) {
                   buffer = buffer.concat(decoder.decode(chunk, { stream: true }));
                   return cb();
@@ -91,12 +101,12 @@ const destination = fs.createWriteStream('result.csv');
                 flush (cb) {
                   return cb(
                     null,
-                    buffer.concat(decoder.decode())
+                    buffer.concat(decoder.decode()) // passing as whole
                   );
                 }
               }),
               convert2googleCsvTransform(file),
-              err => {if(err) throw err}
+              err => { if(err) throw err }
             )
           )
         })
@@ -107,17 +117,14 @@ const destination = fs.createWriteStream('result.csv');
     for (const stream of sources) {
       await new Promise((resolve, reject) => 
         stream
-          .once("close", reject)
           .once("error", reject)
           .once("end", resolve)
           .pipe(destination, { end: false })
       )
     }
+    destination.end(() => console.info("succeeded."));
   } catch (err) {
-    sources.forEach(stream => stream.destroy(err));
-    console.error(err);
-  } finally {
-    destination.end();
-    console.info("done.");
+    sources.forEach(stream => stream.destroy());
+    throw err;
   }
 })();
