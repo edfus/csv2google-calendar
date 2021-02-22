@@ -4,7 +4,9 @@
   "main": "convert.js",
   "scripts": {
     "convert": "node convert.js",
-    "c": "node convert.js"
+    "c": "node convert.js",
+    "scrape": "node scrape.mjs",
+    "s": "node scrape.mjs"
   },
   "author": "e",
   "license": "ISC"

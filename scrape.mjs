@@ -8,7 +8,7 @@ import {
   path,
   api_path,
   student_id
-} from "./scrape.config.js";
+} from "./scrape.config.mjs";
 
 const [academic_year, which_semester]
       = ["2020-2021", "2"];
@@ -45,6 +45,8 @@ const startFrom = 1;
   if(!existsSync(dest))
     await fsp.mkdir(dest);
 
+  console.info(`${dest}:`);
+
   Promise.allSettled (
     new Array(16) // startFrom ~ startFrom + 15 weeks
       .fill(void 0)
@@ -68,12 +70,12 @@ const startFrom = 1;
                 pipeline (
                   res,
                   createWriteStream(`${dest}${i}.xlsx`),
-                  err => err ? reject(err) : resolve(i)
+                  err => err ? reject(err) : resolve(console.info(`\tweek(${i}) - ${i}.xlsx done`))
                 )
             ).on('error', reject)
             .end(stringify(params))
           )
         }
       )
-  ).then(() => console.info("done."));
+  ).then(() => console.info("succeeded"));
 })()
