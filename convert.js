@@ -1,14 +1,32 @@
-const fs = require("fs");
-const { Transform, pipeline } = require("stream");
-const Stream = require('stream');
-const { TextDecoder } = require("util");
+import { createWriteStream, promises, createReadStream } from "fs";
+import { Transform, pipeline } from "stream";
+import { Transform as _Transform, Readable } from 'stream';
+import { TextDecoder } from "util";
+import { createInterface } from "readline";
 
-const { 
-  path = './csvs/', 
-  lineEnd = '\r\n',
-  startDayOfThisTerm,
-  timeTable
-} = require("./config.js");
+import * as config from "./config.js";
+let { startDayOfThisTerm } = config;
+const {
+  path = './csvs/', lineEnd = '\r\n', timeTable
+} = config;
+
+const lineReader = createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+const question = q => new Promise(cb => lineReader.question(q, cb));
+
+const isCorrect = await question(
+  `startDayOfThisTerm: ${startDayOfThisTerm}. Is that correct? (Y/n) `
+);
+
+if(!/^y/i.test(isCorrect)) {
+  startDayOfThisTerm = await question(
+    `startDayOfThisTerm: (e.g. 06/28/2021) `
+  ) || startDayOfThisTerm;
+}
+
+lineReader.close();
 
 const getDate = (theWeek, dayOftheWeek) => {
   const millisecondsOfADay = 86400000;
@@ -24,12 +42,16 @@ const getDate = (theWeek, dayOftheWeek) => {
             )
 }
 
-const convert2googleCsvTransform = fileName => new Stream.Transform({
+const convert2googleCsvTransform = fileName => new _Transform({
   decodeStrings: false,
   transform: (csvText, meaningless, write) => {
       const weekNum = fileName.match(/\d+/)[0];
 
       const csvArray = csvText.split(`,,,,,,,${lineEnd},,,,,,,`)[1]
+                            .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
+                            .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
+                            .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
+                            .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
                             .replace(/\[(.*?),(.*?)\]/g, match => match.replace(',', ' ')) ///\[[^\],]*,[^\[,]*\]/
                             .split(/第\d{1,2}-\d{1,2}节,/);
       csvArray.shift();
@@ -40,13 +62,26 @@ const convert2googleCsvTransform = fileName => new Stream.Transform({
                       .map((e_ofDay, i_whichDay) => {
                           let date = ''
                           try {
+                            const lastIndexOfOpeningBracket = e_ofDay.lastIndexOf('[');
+                            const closingBracketPair = e_ofDay.indexOf(']', lastIndexOfOpeningBracket);
+                            const mightBeLocation = e_ofDay.slice(
+                              lastIndexOfOpeningBracket + 1, 
+                              closingBracketPair
+                            ).trim();
+
+                            const location = (
+                              /^[A-Z]\d+$/.test(mightBeLocation)
+                              ? mightBeLocation
+                              : e_ofDay.match(/^[A-Z]\d+$/)?.[0] || ""
+                            );
+
                             return (
-                              `${e_ofDay.split("\"")[1].split(`\n[`)[0]},` // \n[ instead of \r\n[
+                              `${sanitize(e_ofDay.split("\"")[1].split(`\n[`)[0])},` // \n[ instead of \r\n[
                               + `${date = getDate(weekNum, i_whichDay + 1)},`
                               + `${date},`
                               + `${timeTable[i_whichPeriod]},`
-                              + `${e_ofDay},`
-                              + `${e_ofDay.slice(e_ofDay.lastIndexOf('[')  + 1, e_ofDay.lastIndexOf(']'))}`
+                              + `${sanitize(e_ofDay)},`
+                              + `${sanitize(location)}`
                             );
                             // Example: course name,09/28/2020,09/28/2020,10:21,10:30,course name[period: 1-4 H][session: 1-15 W][Z5608],Z5608
                           } catch (err) {
@@ -58,12 +93,13 @@ const convert2googleCsvTransform = fileName => new Stream.Transform({
             )
             .filter(e => e)
             .join(lineEnd)
+            .concat(lineEnd)
         )
       console.info(`  ${fileName} done`)
   }
 });
 
-const beginningLine = new Stream.Readable({
+const beginningLine = new Readable({
   read() {
       this.push(`Subject,Start date,End Date,Start time,End Time,Description,Location${lineEnd}`);
       this.push(null);
@@ -73,7 +109,7 @@ const beginningLine = new Stream.Readable({
 const fileEncoding = "utf8";
 const destinationFilename = "./result.csv";
 const decoder = new TextDecoder(fileEncoding);
-const destination = fs.createWriteStream(destinationFilename);
+const destination = createWriteStream(destinationFilename);
 
 console.info(
   [
@@ -85,13 +121,13 @@ console.info(
   const sources = (
     [
       beginningLine,
-      ...(await fs.promises.readdir(path))
+      ...(await promises.readdir(path))
         .filter(e => /\.csv$/.test(e))
         .map(file => {
           let buffer = '';
           return (
             pipeline(
-              fs.createReadStream(path + file),
+              createReadStream(path + file),
               new Transform({
                 objectMode: true,
                 transform (chunk, buffer_enc, cb) {
@@ -128,3 +164,7 @@ console.info(
     throw err;
   }
 })();
+
+function sanitize (name) {
+  return name.trim().replace(/,|(\r?\n)+|"|'/g, "-").replace(/^-+|-+$/g, "");
+}

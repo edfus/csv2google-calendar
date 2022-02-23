@@ -6,8 +6,10 @@
     "convert": "node convert.js",
     "c": "node convert.js",
     "scrape": "node scrape.mjs",
-    "s": "node scrape.mjs"
+    "s": "node scrape.mjs",
+    "start": "sh ./start.sh"
   },
+  "type": "module",
   "author": "e",
   "license": "ISC"
 }

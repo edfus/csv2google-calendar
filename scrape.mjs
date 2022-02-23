@@ -2,6 +2,7 @@ import { createWriteStream, existsSync, promises as fsp } from "fs";
 import { request } from "http";
 import { stringify } from "querystring";
 import { pipeline } from "stream";
+import { createInterface } from "readline";
 
 import {
   host,
@@ -10,9 +11,33 @@ import {
   student_id
 } from "./scrape.config.mjs";
 
-const [academic_year, which_semester]
-      = ["2020-2021", "2"];
+const lineReader = createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+const question = q => new Promise(cb => lineReader.question(q, cb));
+
+let [ academic_year, which_semester ]
+      = ["2021-2022", "1"];
 // which_semester: 1 - autumn semester, 2 -spring semester, 3 - summer session
+
+const isCorrect = await question(
+  `academic_year: ${academic_year}, which_semester: ${
+    which_semester
+  }. No changes need to be made? (Y/n) `
+);
+
+if(!/^y/i.test(isCorrect)) {
+  academic_year = await question(
+    `academic_year: (e.g. 2020-2021) `
+  ) || academic_year;
+
+  which_semester = await question(
+    `which_semester: (1 - autumn semester, 2 -spring semester, 3 - summer session) `
+  ) || which_semester;
+}
+
+lineReader.close();
 
 const week = index => 
   "0".repeat(index)
@@ -47,7 +72,7 @@ const startFrom = 1;
 
   console.info(`${dest}:`);
 
-  Promise.allSettled (
+  Promise.all (
     new Array(16) // startFrom ~ startFrom + 15 weeks
       .fill(void 0)
       .map(
