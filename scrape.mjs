@@ -17,27 +17,41 @@ const lineReader = createInterface({
 });
 const question = q => new Promise(cb => lineReader.question(q, cb));
 
+import * as envfile from "envfile";
+import { readFile, writeFile } from "fs/promises";
+
+const variables = envfile.parse(await readFile(".env", "utf-8").catch(_ => ""));
+
+const env = name => variables[name] || process.env[name];
+
 let [ academic_year, which_semester ]
-      = ["2021-2022", "1"];
-// which_semester: 1 - autumn semester, 2 -spring semester, 3 - summer session
+      = [ env("academic_year") ||  "2021-2022", env("which_semester") || "1"];
+// which_semester: 1 - autumn semester, 2 - spring semester, 3 - summer session
 
 const isCorrect = await question(
   `academic_year: ${academic_year}, which_semester: ${
     which_semester
-  }. No changes need to be made? (Y/n) `
+  }. (Y/n) `
 );
 
-if(!/^y/i.test(isCorrect)) {
+if(isCorrect && !/^y/i.test(isCorrect)) {
   academic_year = await question(
     `academic_year: (e.g. 2020-2021) `
   ) || academic_year;
 
   which_semester = await question(
-    `which_semester: (1 - autumn semester, 2 -spring semester, 3 - summer session) `
+    `which_semester: (1: autumn semester, 2: spring semester, 3: summer session) `
   ) || which_semester;
 }
 
 lineReader.close();
+
+variables["academic_year"] = academic_year;
+variables["which_semester"] = which_semester;
+
+try {
+  await writeFile(".env", envfile.stringify(variables), "utf-8");
+} catch {}
 
 const week = index => 
   "0".repeat(index)

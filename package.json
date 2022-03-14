@@ -11,5 +11,8 @@
   },
   "type": "module",
   "author": "e",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "envfile": "^6.17.0"
+  }
 }

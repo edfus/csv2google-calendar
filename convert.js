@@ -3,9 +3,15 @@ import { Transform, pipeline } from "stream";
 import { Transform as _Transform, Readable } from 'stream';
 import { TextDecoder } from "util";
 import { createInterface } from "readline";
+import * as envfile from "envfile";
+import { readFile, writeFile } from "fs/promises";
+
+const variables = envfile.parse(await readFile(".env", "utf-8").catch(_ => ""));
+
+const env = name => variables[name] || process.env[name];
 
 import * as config from "./config.js";
-let { startDayOfThisTerm } = config;
+let startDayOfThisTerm = env("startDayOfThisTerm") || config.startDayOfThisTerm;
 const {
   path = './csvs/', lineEnd = '\r\n', timeTable
 } = config;
@@ -20,13 +26,19 @@ const isCorrect = await question(
   `startDayOfThisTerm: ${startDayOfThisTerm}. Is that correct? (Y/n) `
 );
 
-if(!/^y/i.test(isCorrect)) {
+if(isCorrect && !/^y/i.test(isCorrect)) {
   startDayOfThisTerm = await question(
     `startDayOfThisTerm: (e.g. 06/28/2021) `
   ) || startDayOfThisTerm;
 }
 
 lineReader.close();
+
+variables["startDayOfThisTerm"] = startDayOfThisTerm;
+
+try {
+  await writeFile(".env", envfile.stringify(variables), "utf-8");
+} catch {}
 
 const getDate = (theWeek, dayOftheWeek) => {
   const millisecondsOfADay = 86400000;
